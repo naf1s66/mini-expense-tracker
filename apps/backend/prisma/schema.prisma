@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String    @db.VarChar(50)
+  slug      String    @unique @db.VarChar(50)
+  isActive  Boolean   @default(true) @map("is_active")
+  sortOrder Int       @map("sort_order")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  expenses  Expense[]
+
+  @@index([isActive, sortOrder], map: "categories_active_sort_order_idx")
+  @@map("categories")
+}
+
+model Expense {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  amount      Decimal   @db.Decimal(10, 2)
+  categoryId  String    @map("category_id") @db.Uuid
+  note        String?   @db.VarChar(255)
+  expenseDate DateTime  @map("expense_date") @db.Date
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([categoryId], map: "expenses_category_id_idx")
+  @@index([expenseDate], map: "expenses_expense_date_idx")
+  @@index([deletedAt], map: "expenses_deleted_at_idx")
+  @@map("expenses")
+}
