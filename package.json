@@ -1,0 +1,11 @@
+{
+  "name": "mini-expense-tracker",
+  "private": true,
+  "scripts": {
+    "backend:prisma:format": "npm --prefix apps/backend run prisma:format",
+    "backend:prisma:generate": "npm --prefix apps/backend run prisma:generate",
+    "backend:prisma:migrate": "npm --prefix apps/backend run prisma:migrate",
+    "backend:prisma:seed": "npm --prefix apps/backend run prisma:seed",
+    "backend:prisma:validate": "npm --prefix apps/backend run prisma:validate"
+  }
+}
