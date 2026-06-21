@@ -30,11 +30,32 @@ Available endpoints:
 ```text
 GET /api/health
 GET /api/categories
+GET /api/expenses
+POST /api/expenses
+GET /api/expenses/summary
+GET /api/expenses/:id
+PUT /api/expenses/:id
+DELETE /api/expenses/:id
 ```
 
 `GET /api/categories` returns active categories only, ordered by `sortOrder`, and exposes `id`, `name`, `slug`, and `sortOrder`.
 
-Live category endpoint verification requires PostgreSQL to be running with migrations applied and the category seed completed.
+`GET /api/expenses` and `GET /api/expenses/summary` support optional `from`, `to`, and `categoryId` query parameters. Date filters use `YYYY-MM-DD` values and filter by `expenseDate`.
+
+Expense create and update payloads use this shape:
+
+```json
+{
+  "amount": "12.50",
+  "categoryId": "category-id",
+  "note": "Lunch",
+  "expenseDate": "2026-06-21"
+}
+```
+
+Amounts are accepted as strings, stored with Prisma/PostgreSQL decimal storage, and returned as strings. Deletes are soft deletes and normal expense reads, lists, and summaries exclude deleted rows.
+
+Live category and expense endpoint verification requires PostgreSQL to be running with migrations applied and the category seed completed.
 
 ## Checks
 
