@@ -115,34 +115,36 @@ export function ExpenseManager() {
   return (
     <>
       <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-6 sm:py-10 lg:py-12">
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+        <header className="mb-6">
+          <div className="w-full">
             <p className="text-sm font-medium text-primary">
               Mini Expense Tracker
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
               Expenses
             </h1>
-            <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
-              Add, edit, delete, and review your saved expense entries.
-            </p>
-          </div>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+                Add, edit, delete, and review your saved expense entries.
+              </p>
 
-          <div className="flex items-center gap-3">
-            <ViewToggle value={viewMode} onValueChange={setViewMode} />
-            <Button
-              type="button"
-              className="h-10 min-w-10 px-3 sm:px-4"
-              aria-label="Add expense"
-              onClick={() => {
-                setFeedback(null);
-                setIsCreateOpen(true);
-              }}
-            >
-              <Plus className="h-4 w-4 sm:hidden" aria-hidden="true" />
-              <span className="hidden sm:inline lg:hidden">Add</span>
-              <span className="hidden lg:inline">Add expense</span>
-            </Button>
+              <div className="flex shrink-0 items-center gap-3">
+                <ViewToggle value={viewMode} onValueChange={setViewMode} />
+                <Button
+                  type="button"
+                  className="h-10 min-w-10 px-3 sm:px-4"
+                  aria-label="Add expense"
+                  onClick={() => {
+                    setFeedback(null);
+                    setIsCreateOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4 sm:hidden" aria-hidden="true" />
+                  <span className="hidden sm:inline lg:hidden">Add</span>
+                  <span className="hidden lg:inline">Add expense</span>
+                </Button>
+              </div>
+            </div>
           </div>
         </header>
 

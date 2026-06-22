@@ -18,8 +18,8 @@ export function ExpenseTable({
   onDelete
 }: ExpenseTableProps) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-card shadow-soft">
-      <table className="w-full border-collapse text-left text-sm">
+    <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-soft">
+      <table className="min-w-[760px] w-full border-collapse text-left text-sm">
         <thead className="bg-secondary text-xs uppercase tracking-wide text-muted-foreground">
           <tr>
             <th className="px-5 py-3 font-medium">Amount</th>

@@ -10,7 +10,7 @@ export type ExpenseFormErrors = Partial<Record<keyof ExpenseFormValues, string>>
 export type NormalizedExpenseFormValues = {
   amount: string;
   categoryId: string;
-  note: string | null;
+  note?: string;
   expenseDate: string;
 };
 
@@ -95,7 +95,7 @@ export function normalizeExpenseFormValues(
   return {
     amount: `${whole}.${fraction}`,
     categoryId: values.categoryId,
-    note: note.length === 0 ? null : note,
+    note: note.length === 0 ? undefined : note,
     expenseDate: values.expenseDate
   };
 }

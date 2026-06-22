@@ -1,19 +1,22 @@
 export function formatMoney(amount: string): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "BDT",
+  const formattedAmount = new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(Number(amount));
+
+  return `৳ ${formattedAmount}`;
+}
+
+function dateOnlyToLocalDate(date: string): Date {
+  const [year, month, day] = date.split("-").map(Number);
+
+  return new Date(year, month - 1, day);
 }
 
 export function formatDateOnly(date: string): string {
-  const parsed = new Date(`${date}T00:00:00.000Z`);
-
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat(undefined, {
     year: "numeric",
     month: "short",
-    day: "numeric",
-    timeZone: "UTC"
-  }).format(parsed);
+    day: "numeric"
+  }).format(dateOnlyToLocalDate(date));
 }

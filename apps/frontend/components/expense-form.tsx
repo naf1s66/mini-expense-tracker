@@ -73,6 +73,14 @@ function hasErrors(errors: ExpenseFormErrors): boolean {
   return Object.keys(errors).length > 0;
 }
 
+function RequiredMarker() {
+  return (
+    <span className="text-destructive" aria-hidden="true">
+      *
+    </span>
+  );
+}
+
 export function ExpenseForm({
   mode,
   initialValues,
@@ -152,6 +160,7 @@ export function ExpenseForm({
     normalizedValues.note !== normalizedInitialValues.note ||
     normalizedValues.expenseDate !== normalizedInitialValues.expenseDate;
   const isValid = !hasErrors(currentErrors);
+  const displayedErrors = mode === "edit" ? currentErrors : visibleErrors;
   const submitLabel = mode === "create" ? "Add expense" : "Save";
 
   function updateValue(field: keyof ExpenseFormValues, value: string) {
@@ -223,13 +232,15 @@ export function ExpenseForm({
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="amount">Amount</Label>
+          <Label htmlFor="amount">
+            Amount <RequiredMarker />
+          </Label>
           <div className="relative">
             <span
               aria-hidden="true"
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground"
             >
-              Tk
+              ৳
             </span>
             <Input
               id="amount"
@@ -238,56 +249,62 @@ export function ExpenseForm({
               autoComplete="off"
               placeholder="12.50"
               className="pl-9"
+              required
               value={values.amount}
               onBlur={() => showFieldError("amount")}
               onChange={(event) => updateValue("amount", event.target.value)}
-              aria-invalid={Boolean(visibleErrors.amount)}
+              aria-invalid={Boolean(displayedErrors.amount)}
               aria-describedby={
-                visibleErrors.amount ? toFieldId("amount") : undefined
+                displayedErrors.amount ? toFieldId("amount") : undefined
               }
               disabled={isSubmitting}
             />
           </div>
-          {visibleErrors.amount ? (
+          {displayedErrors.amount ? (
             <p className="text-sm text-destructive" id={toFieldId("amount")}>
-              {visibleErrors.amount}
+              {displayedErrors.amount}
             </p>
           ) : null}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="expenseDate">Expense date</Label>
+          <Label htmlFor="expenseDate">
+            Expense date <RequiredMarker />
+          </Label>
           <Input
             id="expenseDate"
             name="expenseDate"
             type="date"
             max={todayDateOnly()}
+            required
             value={values.expenseDate}
             onBlur={() => showFieldError("expenseDate")}
             onChange={(event) =>
               updateValue("expenseDate", event.target.value)
             }
-            aria-invalid={Boolean(visibleErrors.expenseDate)}
+            aria-invalid={Boolean(displayedErrors.expenseDate)}
             aria-describedby={
-              visibleErrors.expenseDate
+              displayedErrors.expenseDate
                 ? toFieldId("expenseDate")
                 : undefined
             }
             disabled={isSubmitting}
           />
-          {visibleErrors.expenseDate ? (
+          {displayedErrors.expenseDate ? (
             <p
               className="text-sm text-destructive"
               id={toFieldId("expenseDate")}
             >
-              {visibleErrors.expenseDate}
+              {displayedErrors.expenseDate}
             </p>
           ) : null}
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="categoryId">Category</Label>
+        <Label htmlFor="categoryId">
+          Category <RequiredMarker />
+        </Label>
         {isLoadingCategories ? (
           <div className="space-y-2">
             <Skeleton className="h-10 w-full" />
@@ -303,9 +320,10 @@ export function ExpenseForm({
           >
             <SelectTrigger
               id="categoryId"
-              aria-invalid={Boolean(visibleErrors.categoryId)}
+              aria-required="true"
+              aria-invalid={Boolean(displayedErrors.categoryId)}
               aria-describedby={
-                visibleErrors.categoryId ? toFieldId("categoryId") : undefined
+                displayedErrors.categoryId ? toFieldId("categoryId") : undefined
               }
             >
               <SelectValue placeholder="Choose a category" />
@@ -331,12 +349,12 @@ export function ExpenseForm({
         {categoryError ? (
           <p className="text-sm text-destructive">{categoryError}</p>
         ) : null}
-        {visibleErrors.categoryId ? (
+        {displayedErrors.categoryId ? (
           <p
             className="text-sm text-destructive"
             id={toFieldId("categoryId")}
           >
-            {visibleErrors.categoryId}
+            {displayedErrors.categoryId}
           </p>
         ) : null}
       </div>
@@ -356,13 +374,13 @@ export function ExpenseForm({
           value={values.note}
           onBlur={() => showFieldError("note")}
           onChange={(event) => updateValue("note", event.target.value)}
-          aria-invalid={Boolean(visibleErrors.note)}
-          aria-describedby={visibleErrors.note ? toFieldId("note") : undefined}
+          aria-invalid={Boolean(displayedErrors.note)}
+          aria-describedby={displayedErrors.note ? toFieldId("note") : undefined}
           disabled={isSubmitting}
         />
-        {visibleErrors.note ? (
+        {displayedErrors.note ? (
           <p className="text-sm text-destructive" id={toFieldId("note")}>
-            {visibleErrors.note}
+            {displayedErrors.note}
           </p>
         ) : null}
       </div>

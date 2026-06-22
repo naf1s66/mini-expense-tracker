@@ -78,7 +78,16 @@ export function DeleteExpenseDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (isDeleting && !nextOpen) {
+          return;
+        }
+
+        onOpenChange(nextOpen);
+      }}
+    >
       <DialogContent onOpenChange={onOpenChange} showClose={!isDeleting}>
         <DialogHeader>
           <DialogTitle>Delete expense?</DialogTitle>

@@ -25,9 +25,9 @@ export function ExpenseCardList({
           key={expense.id}
           className="group transition duration-200 hover:scale-[1.03] hover:bg-accent focus-within:bg-accent"
         >
-          <CardContent className="p-4">
+          <CardContent className="flex min-h-44 flex-col p-4">
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
+              <div className="min-w-0 px-2.5">
                 <p className="text-xl font-semibold text-foreground">
                   {formatMoney(expense.amount)}
                 </p>
@@ -59,18 +59,20 @@ export function ExpenseCardList({
               </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
+            <div className="mt-4 flex items-center justify-between gap-3 px-2.5">
+              <span className="rounded-md bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary ring-1 ring-primary/15">
                 {expense.category.name}
               </span>
             </div>
 
             {expense.note ? (
-              <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted-foreground">
+              <p className="mt-4 line-clamp-3 px-2.5 text-sm leading-6 text-muted-foreground">
                 {expense.note}
               </p>
             ) : (
-              <p className="mt-3 text-sm text-muted-foreground/70">No note</p>
+              <p className="mt-4 px-2.5 text-sm leading-6 text-muted-foreground/70">
+                No note
+              </p>
             )}
           </CardContent>
         </Card>
