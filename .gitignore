@@ -3,8 +3,13 @@ node_modules/
 .env.*
 !.env.example
 dist/
+build/
 coverage/
 .next/
 out/
+.vercel/
+docker-data/
+tmp/
+*.log
 *.tsbuildinfo
 
