@@ -28,9 +28,26 @@ export type CreateExpensePayload = {
 
 export type UpdateExpensePayload = CreateExpensePayload;
 
+export type ExpenseQueryFilters = {
+  from?: string;
+  to?: string;
+};
+
 export type DeleteExpenseResult = {
   id: string;
   deleted: true;
+};
+
+export type ExpenseSummary = {
+  totalSpend: string;
+  categories: {
+    category: {
+      id: string;
+      name: string;
+      slug: string;
+    };
+    total: string;
+  }[];
 };
 
 type ApiSuccess<T> = {
@@ -106,6 +123,22 @@ async function request<T>(
   return body.data;
 }
 
+function buildQueryString(filters: ExpenseQueryFilters = {}): string {
+  const params = new URLSearchParams();
+
+  if (filters.from !== undefined) {
+    params.set("from", filters.from);
+  }
+
+  if (filters.to !== undefined) {
+    params.set("to", filters.to);
+  }
+
+  const queryString = params.toString();
+
+  return queryString.length > 0 ? `?${queryString}` : "";
+}
+
 export function fetchCategories(): Promise<Category[]> {
   return request<Category[]>("/categories", {
     method: "GET",
@@ -124,11 +157,25 @@ export function createExpense(payload: CreateExpensePayload): Promise<Expense> {
   );
 }
 
-export function fetchExpenses(): Promise<Expense[]> {
-  return request<Expense[]>("/expenses", {
+export function fetchExpenses(
+  filters: ExpenseQueryFilters = {}
+): Promise<Expense[]> {
+  return request<Expense[]>(`/expenses${buildQueryString(filters)}`, {
     method: "GET",
     cache: "no-store"
   });
+}
+
+export function fetchExpenseSummary(
+  filters: ExpenseQueryFilters = {}
+): Promise<ExpenseSummary> {
+  return request<ExpenseSummary>(
+    `/expenses/summary${buildQueryString(filters)}`,
+    {
+      method: "GET",
+      cache: "no-store"
+    }
+  );
 }
 
 export function updateExpense(

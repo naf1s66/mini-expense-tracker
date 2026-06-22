@@ -52,7 +52,7 @@ export function ExpenseTable({
                 {formatDateOnly(expense.expenseDate)}
               </td>
               <td className="px-5 py-4">
-                <div className="flex justify-end gap-2 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100">
+                <div className="flex justify-end gap-2 opacity-100 transition-opacity xl:opacity-0 xl:group-hover:opacity-100 xl:group-focus-within:opacity-100">
                   <Button
                     type="button"
                     variant="ghost"

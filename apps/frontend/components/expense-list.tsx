@@ -17,6 +17,8 @@ type ExpenseListProps = {
   error: string | null;
   isLoading: boolean;
   viewMode: ExpenseViewMode;
+  emptyTitle?: string;
+  emptyMessage?: string;
   onRetry: () => void;
   onEdit: (expense: Expense) => void;
   onDelete: (expense: Expense) => void;
@@ -62,6 +64,8 @@ export function ExpenseList({
   error,
   isLoading,
   viewMode,
+  emptyTitle = "No expenses yet",
+  emptyMessage = "Add your first expense to start building the list.",
   onRetry,
   onEdit,
   onDelete
@@ -92,10 +96,10 @@ export function ExpenseList({
             <Receipt className="h-6 w-6" aria-hidden="true" />
           </div>
           <h2 className="mt-4 text-lg font-semibold tracking-normal">
-            No expenses yet
+            {emptyTitle}
           </h2>
           <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-            Add your first expense to start building the list.
+            {emptyMessage}
           </p>
         </CardContent>
       </Card>

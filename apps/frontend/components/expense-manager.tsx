@@ -1,14 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
 import {
   ApiError,
-  CreateExpensePayload,
-  Expense,
+  type CreateExpensePayload,
+  type Expense,
+  type ExpenseQueryFilters,
+  type ExpenseSummary as ExpenseSummaryData,
   createExpense,
   deleteExpense,
+  fetchExpenseSummary,
   fetchExpenses,
   updateExpense
 } from "@/lib/api";
@@ -22,12 +25,34 @@ import { Button } from "@/components/ui/button";
 import { DeleteExpenseDialog } from "@/components/delete-expense-dialog";
 import { ExpenseDialog } from "@/components/expense-dialog";
 import { ExpenseList } from "@/components/expense-list";
-import { ExpenseViewMode, ViewToggle } from "@/components/view-toggle";
+import {
+  ALL_PERIOD_VALUE,
+  ExpenseListControls,
+  type MonthOption
+} from "@/components/expense-list-controls";
+import { ExpenseSummary as ExpenseSummarySection } from "@/components/expense-summary";
+import type { ExpenseViewMode } from "@/components/view-toggle";
 
 type Feedback = {
   title: string;
   message: string;
 };
+
+const MONTH_OPTIONS: MonthOption[] = [
+  { value: "1", label: "January" },
+  { value: "2", label: "February" },
+  { value: "3", label: "March" },
+  { value: "4", label: "April" },
+  { value: "5", label: "May" },
+  { value: "6", label: "June" },
+  { value: "7", label: "July" },
+  { value: "8", label: "August" },
+  { value: "9", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" }
+];
+const DEFAULT_YEAR_OPTION_COUNT = 10;
 
 function formatApiError(error: unknown, fallback: string): string {
   if (error instanceof ApiError) {
@@ -39,6 +64,48 @@ function formatApiError(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function padDatePart(value: number): string {
+  return String(value).padStart(2, "0");
+}
+
+function expenseYear(expense: Expense): string {
+  return expense.expenseDate.slice(0, 4);
+}
+
+function buildDateFilters(year: string, month: string): ExpenseQueryFilters {
+  if (year === ALL_PERIOD_VALUE) {
+    return {};
+  }
+
+  const numericYear = Number(year);
+
+  if (!Number.isInteger(numericYear)) {
+    return {};
+  }
+
+  if (month === ALL_PERIOD_VALUE) {
+    return {
+      from: `${numericYear}-01-01`,
+      to: `${numericYear}-12-31`
+    };
+  }
+
+  const numericMonth = Number(month);
+
+  if (!Number.isInteger(numericMonth) || numericMonth < 1 || numericMonth > 12) {
+    return {};
+  }
+
+  const lastDayOfMonth = new Date(numericYear, numericMonth, 0).getDate();
+
+  return {
+    from: `${numericYear}-${padDatePart(numericMonth)}-01`,
+    to: `${numericYear}-${padDatePart(numericMonth)}-${padDatePart(
+      lastDayOfMonth
+    )}`
+  };
+}
+
 function describeExpense(expense: Expense): string {
   return `${formatMoney(expense.amount)} for ${expense.category.name} on ${formatDateOnly(
     expense.expenseDate
@@ -46,21 +113,52 @@ function describeExpense(expense: Expense): string {
 }
 
 export function ExpenseManager() {
+  const currentYear = useMemo(() => new Date().getFullYear(), []);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [availableExpenseYears, setAvailableExpenseYears] = useState<string[]>(
+    []
+  );
   const [isLoadingExpenses, setIsLoadingExpenses] = useState(true);
   const [expenseError, setExpenseError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<ExpenseSummaryData | null>(null);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(true);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState(ALL_PERIOD_VALUE);
+  const [selectedYear, setSelectedYear] = useState(ALL_PERIOD_VALUE);
   const [viewMode, setViewMode] = useState<ExpenseViewMode>("table");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
+  const hasActiveFilters =
+    selectedMonth !== ALL_PERIOD_VALUE || selectedYear !== ALL_PERIOD_VALUE;
+  const dateFilters = useMemo(
+    () => buildDateFilters(selectedYear, selectedMonth),
+    [selectedMonth, selectedYear]
+  );
+  const yearOptions = useMemo(() => {
+    const years = new Set(
+      Array.from({ length: DEFAULT_YEAR_OPTION_COUNT }, (_, index) =>
+        String(currentYear - index)
+      )
+    );
+
+    availableExpenseYears.forEach((year) => years.add(year));
+
+    if (selectedYear !== ALL_PERIOD_VALUE) {
+      years.add(selectedYear);
+    }
+
+    return Array.from(years).sort((left, right) => Number(right) - Number(left));
+  }, [availableExpenseYears, currentYear, selectedYear]);
+
   const loadExpenses = useCallback(async () => {
     setIsLoadingExpenses(true);
     setExpenseError(null);
 
     try {
-      const data = await fetchExpenses();
+      const data = await fetchExpenses(dateFilters);
       setExpenses(data);
     } catch (error) {
       setExpenseError(
@@ -72,11 +170,68 @@ export function ExpenseManager() {
     } finally {
       setIsLoadingExpenses(false);
     }
+  }, [dateFilters]);
+
+  const loadAvailableExpenseYears = useCallback(async () => {
+    const data = await fetchExpenses();
+    const years = new Set(data.map(expenseYear));
+
+    setAvailableExpenseYears(
+      Array.from(years).sort((left, right) => Number(right) - Number(left))
+    );
   }, []);
 
+  const loadSummary = useCallback(async () => {
+    setIsLoadingSummary(true);
+    setSummaryError(null);
+
+    try {
+      const data = await fetchExpenseSummary(dateFilters);
+      setSummary(data);
+    } catch (error) {
+      setSummaryError(
+        formatApiError(
+          error,
+          "Unable to reach the backend API. Check that the backend server is running."
+        )
+      );
+    } finally {
+      setIsLoadingSummary(false);
+    }
+  }, [dateFilters]);
+
+  const loadExpenseData = useCallback(async () => {
+    await Promise.all([
+      loadExpenses(),
+      loadSummary(),
+      loadAvailableExpenseYears()
+    ]);
+  }, [loadAvailableExpenseYears, loadExpenses, loadSummary]);
+
   useEffect(() => {
-    loadExpenses();
-  }, [loadExpenses]);
+    loadExpenseData();
+  }, [loadExpenseData]);
+
+  function handleMonthChange(value: string) {
+    setSelectedMonth(value);
+
+    if (value !== ALL_PERIOD_VALUE && selectedYear === ALL_PERIOD_VALUE) {
+      setSelectedYear(String(currentYear));
+    }
+  }
+
+  function handleYearChange(value: string) {
+    setSelectedYear(value);
+
+    if (value === ALL_PERIOD_VALUE) {
+      setSelectedMonth(ALL_PERIOD_VALUE);
+    }
+  }
+
+  function handleResetFilters() {
+    setSelectedMonth(ALL_PERIOD_VALUE);
+    setSelectedYear(ALL_PERIOD_VALUE);
+  }
 
   async function handleCreate(payload: CreateExpensePayload) {
     const expense = await createExpense(payload);
@@ -85,7 +240,7 @@ export function ExpenseManager() {
       title: "Expense added",
       message: `Added ${describeExpense(expense)}.`
     });
-    await loadExpenses();
+    await loadExpenseData();
   }
 
   async function handleUpdate(payload: CreateExpensePayload) {
@@ -99,7 +254,7 @@ export function ExpenseManager() {
       title: "Expense updated",
       message: `Saved ${describeExpense(expense)}.`
     });
-    await loadExpenses();
+    await loadExpenseData();
   }
 
   async function handleDelete(expense: Expense) {
@@ -109,7 +264,7 @@ export function ExpenseManager() {
       title: "Expense deleted",
       message: "The expense was removed from your active expense list."
     });
-    await loadExpenses();
+    await loadExpenseData();
   }
 
   return (
@@ -128,22 +283,19 @@ export function ExpenseManager() {
                 Add, edit, delete, and review your saved expense entries.
               </p>
 
-              <div className="flex shrink-0 items-center gap-3">
-                <ViewToggle value={viewMode} onValueChange={setViewMode} />
-                <Button
-                  type="button"
-                  className="h-10 min-w-10 px-3 sm:px-4"
-                  aria-label="Add expense"
-                  onClick={() => {
-                    setFeedback(null);
-                    setIsCreateOpen(true);
-                  }}
-                >
-                  <Plus className="h-4 w-4 sm:hidden" aria-hidden="true" />
-                  <span className="hidden sm:inline lg:hidden">Add</span>
-                  <span className="hidden lg:inline">Add expense</span>
-                </Button>
-              </div>
+              <Button
+                type="button"
+                className="h-10 min-w-10 shrink-0 px-3 sm:px-4"
+                aria-label="Add expense"
+                onClick={() => {
+                  setFeedback(null);
+                  setIsCreateOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4 sm:hidden" aria-hidden="true" />
+                <span className="hidden sm:inline lg:hidden">Add</span>
+                <span className="hidden lg:inline">Add expense</span>
+              </Button>
             </div>
           </div>
         </header>
@@ -155,11 +307,43 @@ export function ExpenseManager() {
           </Alert>
         ) : null}
 
+        <div className="mb-5">
+          <ExpenseSummarySection
+            summary={summary}
+            error={summaryError}
+            isLoading={isLoadingSummary}
+            onRetry={loadSummary}
+          />
+        </div>
+
+        <div className="mb-4">
+          <ExpenseListControls
+            month={selectedMonth}
+            year={selectedYear}
+            monthOptions={MONTH_OPTIONS}
+            yearOptions={yearOptions}
+            hasActiveFilters={hasActiveFilters}
+            viewMode={viewMode}
+            onMonthChange={handleMonthChange}
+            onYearChange={handleYearChange}
+            onResetFilters={handleResetFilters}
+            onViewModeChange={setViewMode}
+          />
+        </div>
+
         <ExpenseList
           expenses={expenses}
           error={expenseError}
           isLoading={isLoadingExpenses}
           viewMode={viewMode}
+          emptyTitle={
+            hasActiveFilters ? "No expenses found" : "No expenses yet"
+          }
+          emptyMessage={
+            hasActiveFilters
+              ? "Try a different month or year, or reset the date filters."
+              : "Add your first expense to start building the list."
+          }
           onRetry={loadExpenses}
           onEdit={(expense) => {
             setFeedback(null);
