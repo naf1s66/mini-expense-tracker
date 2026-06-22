@@ -26,6 +26,13 @@ export type CreateExpensePayload = {
   expenseDate: string;
 };
 
+export type UpdateExpensePayload = CreateExpensePayload;
+
+export type DeleteExpenseResult = {
+  id: string;
+  deleted: true;
+};
+
 type ApiSuccess<T> = {
   data: T;
 };
@@ -115,4 +122,27 @@ export function createExpense(payload: CreateExpensePayload): Promise<Expense> {
     },
     201
   );
+}
+
+export function fetchExpenses(): Promise<Expense[]> {
+  return request<Expense[]>("/expenses", {
+    method: "GET",
+    cache: "no-store"
+  });
+}
+
+export function updateExpense(
+  id: string,
+  payload: UpdateExpensePayload
+): Promise<Expense> {
+  return request<Expense>(`/expenses/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteExpense(id: string): Promise<DeleteExpenseResult> {
+  return request<DeleteExpenseResult>(`/expenses/${id}`, {
+    method: "DELETE"
+  });
 }
