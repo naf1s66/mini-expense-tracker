@@ -10,6 +10,9 @@
     "backend:prisma:generate": "npm --prefix apps/backend run prisma:generate",
     "backend:prisma:migrate": "npm --prefix apps/backend run prisma:migrate",
     "backend:prisma:seed": "npm --prefix apps/backend run prisma:seed",
-    "backend:prisma:validate": "npm --prefix apps/backend run prisma:validate"
+    "backend:prisma:validate": "npm --prefix apps/backend run prisma:validate",
+    "frontend:dev": "npm --prefix apps/frontend run dev",
+    "frontend:build": "npm --prefix apps/frontend run build",
+    "frontend:lint": "npm --prefix apps/frontend run lint"
   }
 }
