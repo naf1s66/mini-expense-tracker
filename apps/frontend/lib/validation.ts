@@ -7,6 +7,13 @@ export type ExpenseFormValues = {
 
 export type ExpenseFormErrors = Partial<Record<keyof ExpenseFormValues, string>>;
 
+export type NormalizedExpenseFormValues = {
+  amount: string;
+  categoryId: string;
+  note: string | null;
+  expenseDate: string;
+};
+
 const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
 const amountPattern = /^\d+(\.\d{1,2})?$/;
 
@@ -74,4 +81,21 @@ export function validateExpenseForm(
   }
 
   return errors;
+}
+
+export function normalizeExpenseFormValues(
+  values: ExpenseFormValues
+): NormalizedExpenseFormValues {
+  const amount = values.amount.trim();
+  const [rawWhole = "", rawFraction = ""] = amount.split(".");
+  const whole = rawWhole.replace(/^0+(?=\d)/, "") || "0";
+  const fraction = rawFraction.padEnd(2, "0").slice(0, 2);
+  const note = values.note.trim();
+
+  return {
+    amount: `${whole}.${fraction}`,
+    categoryId: values.categoryId,
+    note: note.length === 0 ? null : note,
+    expenseDate: values.expenseDate
+  };
 }
