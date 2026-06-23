@@ -22,6 +22,10 @@ export type ExpenseFilters = {
   categoryId?: string;
 };
 
+export type ExpenseValidationContext = {
+  timeZone?: string;
+};
+
 function isValidDateOnly(value: string): boolean {
   if (!dateOnlyPattern.test(value)) {
     return false;
@@ -37,8 +41,35 @@ function isValidDateOnly(value: string): boolean {
   );
 }
 
-function todayDateOnly(): string {
+function isValidTimeZone(value: string): boolean {
+  try {
+    Intl.DateTimeFormat("en-US", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function todayDateOnly(timeZone?: string): string {
   const now = new Date();
+  const normalizedTimeZone = timeZone?.trim();
+
+  if (normalizedTimeZone && isValidTimeZone(normalizedTimeZone)) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: normalizedTimeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(now);
+    const year = parts.find((part) => part.type === "year")?.value;
+    const month = parts.find((part) => part.type === "month")?.value;
+    const day = parts.find((part) => part.type === "day")?.value;
+
+    if (year && month && day) {
+      return `${year}-${month}-${day}`;
+    }
+  }
+
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
@@ -81,26 +112,30 @@ const dateOnlySchema = z
     message: "Date must be a valid YYYY-MM-DD date"
   });
 
-const expenseDateSchema = dateOnlySchema.refine(
-  (value) => value <= todayDateOnly(),
-  {
-    message: "Expense date cannot be in the future"
-  }
-);
+function expensePayloadSchema(context: ExpenseValidationContext = {}) {
+  const expenseDateSchema = dateOnlySchema.refine(
+    (value) => value <= todayDateOnly(context.timeZone),
+    {
+      message: "Expense date cannot be in the future"
+    }
+  );
 
-const expensePayloadSchema = z.object({
-  amount: amountSchema,
-  categoryId: uuidSchema,
-  note: z
-    .string({
-      error: "Note must be a string"
-    })
-    .trim()
-    .max(255, "Note must be 255 characters or less")
-    .optional()
-    .transform((value) => (value === undefined || value === "" ? null : value)),
-  expenseDate: expenseDateSchema
-});
+  return z.object({
+    amount: amountSchema,
+    categoryId: uuidSchema,
+    note: z
+      .string({
+        error: "Note must be a string"
+      })
+      .trim()
+      .max(255, "Note must be 255 characters or less")
+      .optional()
+      .transform((value) =>
+        value === undefined || value === "" ? null : value
+      ),
+    expenseDate: expenseDateSchema
+  });
+}
 
 const expenseFiltersSchema = z
   .object({
@@ -131,8 +166,11 @@ function validationDetails(error: z.ZodError): string[] {
   });
 }
 
-export function parseExpensePayload(input: unknown): ExpensePayload {
-  const result = expensePayloadSchema.safeParse(input);
+export function parseExpensePayload(
+  input: unknown,
+  context: ExpenseValidationContext = {}
+): ExpensePayload {
+  const result = expensePayloadSchema(context).safeParse(input);
 
   if (!result.success) {
     throw new ValidationError(
