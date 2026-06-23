@@ -1,4 +1,4 @@
-import type { RequestHandler } from "express";
+import type { Request, RequestHandler } from "express";
 
 import {
   addExpense,
@@ -14,6 +14,10 @@ import {
   parseExpensePayload
 } from "../validators/expense.validator.js";
 
+function requestTimeZone(req: Request): string | undefined {
+  return req.get("x-time-zone");
+}
+
 export const getExpenses: RequestHandler = async (req, res) => {
   const filters = parseExpenseFilters(req.query);
   const expenses = await listExpenses(filters);
@@ -24,7 +28,9 @@ export const getExpenses: RequestHandler = async (req, res) => {
 };
 
 export const createExpense: RequestHandler = async (req, res) => {
-  const payload = parseExpensePayload(req.body);
+  const payload = parseExpensePayload(req.body, {
+    timeZone: requestTimeZone(req)
+  });
   const expense = await addExpense(payload);
 
   res.status(201).json({
@@ -43,7 +49,9 @@ export const getExpenseById: RequestHandler = async (req, res) => {
 
 export const updateExpense: RequestHandler = async (req, res) => {
   const id = parseExpenseId(req.params);
-  const payload = parseExpensePayload(req.body);
+  const payload = parseExpensePayload(req.body, {
+    timeZone: requestTimeZone(req)
+  });
   const expense = await editExpense(id, payload);
 
   res.status(200).json({

@@ -1,56 +1,38 @@
 # Mini Expense Tracker
 
-Mini Expense Tracker is a small full-stack app for recording daily expenses, reviewing saved entries, and seeing spending totals by category. It uses a Next.js frontend, an Express API, Prisma, and PostgreSQL.
+A full-stack expense tracker where users can add, edit, delete, categorize, filter, and summarize daily expenses. The app uses Next.js, Express, Prisma, PostgreSQL, and Docker Compose.
 
-## Tech Stack
+## Prerequisites
 
-- Frontend: Next.js, React, Tailwind CSS, shadcn/ui-style components
-- Backend: Node.js, Express, Zod
-- Database: PostgreSQL
-- ORM: Prisma
-- Containerization: Docker Compose
+- Docker Desktop with Docker Compose.
+- If running commands inside WSL, enable Docker Desktop WSL integration for this distro first. Otherwise run the Docker commands from PowerShell, Command Prompt, or a terminal where `docker` is available.
 
-## Features
+## Run The App
 
-- Add, edit, delete, and list expenses.
-- Store expense amounts as database decimals.
-- Validate amount, category, note, and expense date on the backend.
-- Seed fixed categories for consistent summaries.
-- Show total spend and category breakdown.
-- Filter the expense list and summary by month and year.
-- Soft delete expenses so normal reads and summaries exclude deleted rows.
-
-## Extra Feature
-
-The extra feature is month/year filtering for the expense list and summary. It helps users focus on a specific spending period instead of scanning every saved expense manually. The summary and visible list use the same date filter, so the totals stay aligned with what the user is reviewing. The reset control gives users a quick path back to their full expense history.
-
-## Run With Docker
-
-Docker is the primary reviewer path. It starts PostgreSQL, applies Prisma migrations, seeds the fixed categories, starts the backend API, and serves the frontend.
+The reviewer path is Docker. This starts PostgreSQL, applies Prisma migrations, seeds categories, starts the backend, and serves the frontend.
 
 ```sh
 docker-compose up
 ```
 
-If your Docker installation uses the newer Compose plugin, this equivalent command also works:
+If your Docker install uses the newer Compose plugin, this also works:
 
 ```sh
 docker compose up
 ```
 
-Open these URLs after startup:
+Open:
 
 - Frontend: http://localhost:3000
 - Backend health check: http://localhost:4000/api/health
-- Categories API: http://localhost:4000/api/categories
 
-Stop the containers with `Ctrl+C`, then run:
+Stop the app with `Ctrl+C`, then run:
 
 ```sh
 docker-compose down
 ```
 
-App data persists in the named Docker volume `mini-expense-tracker_postgres_data`. To reset the database and rerun migrations/seeding from an empty volume:
+To reset all database data:
 
 ```sh
 docker-compose down -v
@@ -59,24 +41,20 @@ docker-compose up --build
 
 ## Environment
 
-The committed `.env.example` files document the expected variables. Docker Compose works with the checked-in defaults, so copying an env file is optional for review.
+The root `.env.example` lists the Docker Compose variables for ports, PostgreSQL, CORS, and the frontend API URL. Docker Compose works with the checked-in defaults, so creating a local `.env` file is optional for review.
 
-- Root `.env.example` contains Docker Compose ports, PostgreSQL defaults, CORS origin, and the browser API URL.
-- `apps/backend/.env.example` is for local non-Docker backend development.
-- `apps/frontend/.env.example` is for local non-Docker frontend development.
-
-Do not commit local `.env` or `.env.local` files.
+Do not commit `.env` or `.env.local` files.
 
 ## Local Development
 
-Use local development only if you do not want Docker. You need Node.js, npm, and a local PostgreSQL database.
+Use this only if you want to run without Docker. You need Node.js, npm, and a local PostgreSQL database.
 
 ```sh
 npm --prefix apps/backend install
 npm --prefix apps/frontend install
 ```
 
-Create `apps/backend/.env` from `apps/backend/.env.example` and point `DATABASE_URL` at your local PostgreSQL database. Create `apps/frontend/.env.local` from `apps/frontend/.env.example` if your backend URL differs from the default.
+Create `apps/backend/.env` from `apps/backend/.env.example` and set `DATABASE_URL` for your local PostgreSQL database. Create `apps/frontend/.env.local` from `apps/frontend/.env.example` only if the backend API is not running at `http://localhost:4000/api`.
 
 Prepare the database:
 
@@ -86,7 +64,7 @@ npm run backend:prisma:migrate
 npm run backend:prisma:seed
 ```
 
-Run the apps in separate terminals:
+Run the backend and frontend in separate terminals:
 
 ```sh
 npm run backend:dev
@@ -102,41 +80,6 @@ npm run frontend:lint
 npm run frontend:build
 ```
 
-## API Overview
+## Extra Feature
 
-All API routes are served from the backend at `/api`.
-
-```text
-GET    /api/health
-GET    /api/categories
-GET    /api/expenses
-POST   /api/expenses
-GET    /api/expenses/summary
-GET    /api/expenses/:id
-PUT    /api/expenses/:id
-DELETE /api/expenses/:id
-```
-
-Expense list and summary endpoints support optional date filters:
-
-```text
-GET /api/expenses?from=2026-06-01&to=2026-06-30
-GET /api/expenses/summary?from=2026-06-01&to=2026-06-30
-```
-
-Create and update payloads use string amounts:
-
-```json
-{
-  "amount": "12.50",
-  "categoryId": "category-id",
-  "note": "Lunch",
-  "expenseDate": "2026-06-21"
-}
-```
-
-## Categories And Persistence
-
-Categories are seeded automatically during Docker backend startup and through `npm run backend:prisma:seed` for local development. The seed is idempotent: it inserts missing fixed categories, updates seeded category labels/order by slug, and avoids duplicates. Category management is intentionally not included in the UI; users choose from the fixed categories and can use `Other` when needed.
-
-PostgreSQL data persists across container restarts through the Docker volume. Creating an expense, stopping containers, and starting them again should keep the saved list and summary intact. Use `docker-compose down -v` only when you intentionally want to reset all database data.
+The extra feature is month/year filtering for both the expense list and summary. I chose it because expense tracking is usually reviewed by period, not as one long lifetime list. Applying the same filter to the summary and visible expenses keeps the totals aligned with what the user is currently reviewing. A reset control lets the user quickly return to the full expense history.

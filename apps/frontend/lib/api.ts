@@ -76,6 +76,14 @@ export class ApiError extends Error {
 const apiBaseUrl =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api";
 
+function browserTimeZone(): string | undefined {
+  if (typeof Intl === "undefined") {
+    return undefined;
+  }
+
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
 async function parseApiError(response: Response): Promise<ApiError> {
   try {
     const body = (await response.json()) as ApiErrorBody;
@@ -96,14 +104,21 @@ async function request<T>(
   expectedStatus?: number
 ): Promise<T> {
   let response: Response;
+  const headers = new Headers(init?.headers);
+  const timeZone = browserTimeZone();
+
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  if (timeZone) {
+    headers.set("X-Time-Zone", timeZone);
+  }
 
   try {
     response = await fetch(`${apiBaseUrl}${path}`, {
       ...init,
-      headers: {
-        "Content-Type": "application/json",
-        ...init?.headers
-      }
+      headers
     });
   } catch {
     throw new ApiError(
